@@ -48,15 +48,15 @@ if __name__ == "__main__":
     password = 'admin'
     my_queue = 'news_queue'
     my_routing_key = "k1"
-
+    
 
     # Open a connection to RabbitMQ on localhost using all default parameters
     connection = pika.BlockingConnection(
         pika.ConnectionParameters(
-            host='localhost', port=5672,
+            host="rabbitmq", port=5672,
             credentials=pika.PlainCredentials(
-                username,
-                password
+                username=username,
+                password=password
             ),
         ),
     )

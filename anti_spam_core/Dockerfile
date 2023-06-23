@@ -1,8 +1,7 @@
 FROM python:3.9
-WORKDIR /app
+WORKDIR /anti_spam_core
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-COPY . .
-ADD . /
-CMD ["python", "./main.py"]
+COPY . /anti_spam_core
+CMD ["python3", "main.py"]
 
