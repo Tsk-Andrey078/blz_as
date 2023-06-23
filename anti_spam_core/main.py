@@ -1,38 +1,17 @@
 from sklearn.pipeline import Pipeline
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.naive_bayes import MultinomialNB
-from anti_spam_core.stopwordsdict import russian
+from stopwordsdict import russian
 import pandas as pd
 import numpy as np
 import pymorphy2
 import json
 import os
-from anti_spam_core.prepare_x import PrepareDataX
+import pika
+import time
+from prepare_x import PrepareDataX
 
 def filtration(pr_df):
-    
-    #Train model
-    print(pr_df)
-    # Получение пути к текущему файлу скрипта
-    script_path = os.path.abspath(__file__)
-
-    # Получение пути к родительской папке скрипта (папка, содержащая скрипт)
-    parent_folder = os.path.dirname(script_path)
-
-    # Получение пути к папке "Номер 2" внутри родительской папки
-    folder_2_path = os.path.join(parent_folder, "dataset")
-    full_path = folder_2_path + "/posts_inst_ready.csv"
-    df = get_dataframe(full_path)
-    stop = russian
-    x_train = df.loc[:, 'text'].values
-    y_train = df.loc[:, 'spam'].values
-
-    tfidf = TfidfVectorizer(strip_accents=None, lowercase=False, preprocessor=None, stop_words=stop)
-
-    lr_tfidf = Pipeline([('vect', tfidf), ('clf', MultinomialNB(alpha=0.5))])
-    lr_tfidf.fit(x_train, y_train)
-
-
 
     #Get prediction
 
@@ -61,3 +40,33 @@ def get_dataframe(url):
     df = pd.read_csv(url)
     return df
 
+def callback(ch, method, properties, body):
+    print("Received message:", body)
+
+if __name__ == "__main__":
+    username = 'admin'
+    password = 'admin'
+    my_queue = 'news_queue'
+    my_routing_key = "k1"
+
+
+    # Open a connection to RabbitMQ on localhost using all default parameters
+    connection = pika.BlockingConnection(
+        pika.ConnectionParameters(
+            host='localhost', port=5672,
+            credentials=pika.PlainCredentials(
+                username,
+                password
+            ),
+        ),
+    )
+    channel = connection.channel()
+    channel.queue_declare(
+        queue=my_queue,
+        durable=True,
+        exclusive=False,
+        auto_delete=False,
+    )
+    channel.basic_consume(queue=my_queue, on_message_callback=callback, auto_ack=True)
+    channel.start_consuming()
+    print("HEREEEEEEE")
