@@ -2,7 +2,6 @@ import pandas as pd
 import numpy as np
 import pika
 
-
 def get_channel():
     username = 'admin'
     password = 'admin'
@@ -33,5 +32,6 @@ if __name__ == "__main__":
     output['id'] = item_id
     output['text'] = text
     output_json = output.to_json(orient='records')
+    print(output_json)
     channel = get_channel()
     channel.basic_publish(exchange="news_exchange", routing_key="k1", body=output_json)    

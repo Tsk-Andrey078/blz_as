@@ -1,24 +1,20 @@
-from sklearn.pipeline import Pipeline
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.naive_bayes import MultinomialNB
-from stopwordsdict import russian
 import pandas as pd
 import numpy as np
-import pymorphy2
-import json
-import os
-import pika
-import time
 import joblib
+import pika
+import logging
 from prepare_modules.prepare_x import PrepareDataX
+import traceback
 
 def filtration(pr_df):
-    pr = PrepareDataX()
+    print("START 2")
+    print(pr_df)
+    try:
+        pr = PrepareDataX()
+        
+        #Get Model
+        model = joblib.load(open("./models/as_model_inst.pkl", 'rb'))
 
-    #Get Model
-    model = joblib.load(open("./models/as_model_inst.pkl", 'rb'))
-
-    if len(pr_df) > 1:
         #Get prediction
 
             #Prepare Data    
@@ -29,9 +25,7 @@ def filtration(pr_df):
             #Get data
         #y_pred = pr_df.loc[:, 'prediction'].astype(str)
         id_pred = pr_df.loc[:, 'id'].astype(str)
-        x_pred = pr_df.loc[:, 'text'].astype(str)
-
-            
+        x_pred = pr_df.loc[:, 'text'].astype(str)                
 
             #Sending to model
         output = model.predict_proba(x_pred)
@@ -40,9 +34,8 @@ def filtration(pr_df):
         out_df = pd.DataFrame({'id': id_pred, 'text': x_pred, 'spam': output_classes}).to_json(orient='records')
 
         return out_df
-    else:
-        print(pr_df)
-
+    except:
+        logging.info("LOST 2 "+traceback.format_exc())
 
 def get_dataframe(url):
     df = pd.DataFrame()
@@ -50,11 +43,15 @@ def get_dataframe(url):
     return df
 
 def callback(ch, method, properties, body):
-    data = pd.read_json(body.decode('utf-8'))
-    output = filtration(data)
-    ch.basic_publish(exchange="news_exchange", routing_key="k2", body=output)
+    try:
+        data = pd.read_json(body.decode('utf-8'))
+        output = filtration(data)
+        ch.basic_publish(exchange="news_exchange", routing_key="k2", body=output)
+    except:
+        print("LOST "+traceback.format_exc())
 
 if __name__ == "__main__":
+
     username = 'admin'
     password = 'admin'
     my_queue = 'news_queue'
